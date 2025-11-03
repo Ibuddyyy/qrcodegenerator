@@ -1,0 +1,287 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players_upvr = game:GetService("Players")
+local Net = require(ReplicatedStorage.Packages.Net)
+local AdminCommands_upvr = require(ReplicatedStorage.Datas.AdminCommands)
+local InterfaceController_upvr = require(ReplicatedStorage.Controllers.InterfaceController)
+local AnimatedButton_upvr = require(ReplicatedStorage.Classes.AnimatedButton)
+local LocalPlayer_upvr = Players_upvr.LocalPlayer
+local AdminPanel_upvr = LocalPlayer_upvr.PlayerGui:WaitForChild("AdminPanel").AdminPanel
+local Profiles_upvr = AdminPanel_upvr.Profiles
+local ScrollingFrame_upvr_2 = Profiles_upvr.ScrollingFrame
+local ScrollingFrame_upvr = AdminPanel_upvr.Content.ScrollingFrame
+local any_RemoteEvent_result1_upvr_4 = Net:RemoteEvent("AdminPanelService/ExecuteCommand")
+local module = {}
+local var14_upvw
+local var15_upvw
+
+local function getPlayerFromPrefix_upvr(arg1)
+	if arg1 == "" then
+		return nil
+	end
+	for _, v in ipairs(Players_upvr:GetPlayers()) do
+		if v.Name:sub(1, #arg1):lower() == arg1:lower() then
+			return v
+		end
+	end
+	return nil
+end
+
+local Trove_upvr = require(ReplicatedStorage.Packages.Trove)
+local Timer_upvr = require(ReplicatedStorage.Packages.Timer)
+
+local function PlaceOnCooldown_upvr(arg1, arg2)
+	if arg1:GetAttribute("OnCooldown") then
+	else
+		arg1:SetAttribute("OnCooldown", true)
+		local any_new_result1_upvr = Trove_upvr.new()
+		local Timer_upvr_2 = arg1:FindFirstChild("Timer")
+		Timer_upvr_2.Visible = true
+		arg1.CooldownFrame.Visible = true
+		any_new_result1_upvr:Add(function()
+			Timer_upvr_2.Visible = false
+			arg1.CooldownFrame.Visible = false
+			arg1:SetAttribute("OnCooldown", false)
+		end)
+		any_new_result1_upvr:Add(Timer_upvr.Simple(1, function()
+			arg2 -= 1
+			Timer_upvr_2.Text = tostring(arg2)..'s'
+			if arg2 <= 0 then
+				any_new_result1_upvr:Destroy()
+			end
+		end))
+	end
+end
+
+local function Reset_upvr()
+	var14_upvw = nil
+	var15_upvw = nil
+	for _, v_2 in ipairs(Profiles_upvr.ScrollingFrame:GetChildren()) do
+		if v_2:IsA("ImageButton") and v_2.Name ~= "Template" then
+			v_2.UIStroke.Color = Color3.new(0, 0, 0)
+			v_2.UIStroke.Thickness = 1.5
+		end
+	end
+	for _, v_3 in ipairs(ScrollingFrame_upvr:GetChildren()) do
+		if v_3:IsA("ImageButton") and v_3.Name ~= "Template" then
+			v_3.UIStroke.Color = Color3.new(0, 0, 0)
+			v_3.UIStroke.Thickness = 1.5
+		end
+	end
+end
+
+local function SelectCommand_upvr(arg1)
+	if not arg1 or not arg1.Name then
+	end
+	var15_upvw = nil
+	for _, v_4 in ipairs(ScrollingFrame_upvr:GetChildren()) do
+		if v_4:IsA("ImageButton") then
+			local Name_3 = v_4.Name
+			if Name_3 ~= "Template" then
+				if v_4 ~= arg1 then
+					Name_3 = false
+				else
+					Name_3 = true
+				end
+				if not Name_3 or not Color3.new(1, 1, 0) then
+				end
+				v_4.UIStroke.Color = Color3.new(0, 0, 0)
+				if Name_3 then
+				else
+				end
+				v_4.UIStroke.Thickness = 1.5
+			end
+		end
+	end
+end
+
+local function SelectProfile_upvr(arg1)
+	if not arg1 or not Players_upvr:FindFirstChild(arg1.Name) then
+	end
+	var14_upvw = nil
+	for _, v_5 in ipairs(Profiles_upvr.ScrollingFrame:GetChildren()) do
+		if v_5:IsA("ImageButton") then
+			local Name_4 = v_5.Name
+			if Name_4 ~= "Template" then
+				if v_5 ~= arg1 then
+					Name_4 = false
+				else
+					Name_4 = true
+				end
+				if not Name_4 or not Color3.new(1, 1, 0) then
+				end
+				v_5.UIStroke.Color = Color3.new(0, 0, 0)
+				if Name_4 then
+				else
+				end
+				v_5.UIStroke.Thickness = 1.5
+			end
+		end
+	end
+end
+
+local Template_upvr_2 = ScrollingFrame_upvr.Template
+local Close_upvr = AdminPanel_upvr.Header.Close
+local any_setEnabled_result1_upvr = require(ReplicatedStorage.Packages.TopbarPlus).new():setImage(102554277994487, "Selected"):setImage(95529031547606, "Deselected"):setImageScale(0.7):setImageRatio(2):setOrder(2):setEnabled(false)
+
+local function SetupCommands_upvr()
+	for _, v_6 in ipairs(ScrollingFrame_upvr:GetChildren()) do
+		if v_6:IsA("ImageButton") and v_6.Name ~= "Template" then
+			v_6:Destroy()
+		end
+	end
+	for i_7_upvr, v_7_upvr in AdminCommands_upvr do
+		local clone_upvr = Template_upvr_2:Clone()
+		clone_upvr.Name = i_7_upvr
+		clone_upvr.Command.Text = ';'..v_7_upvr.name
+		local icon = v_7_upvr.icon
+		if not icon then
+			icon = clone_upvr.Icon.Image
+		end
+		clone_upvr.Icon.Image = icon
+		clone_upvr.Timer.Text = v_7_upvr.cooldown..'s'
+		clone_upvr.Timer.Visible = false
+		local any_new_result1_2 = AnimatedButton_upvr.new(clone_upvr)
+		any_new_result1_2:Animate()
+		any_new_result1_2.OnActivated:Connect(function()
+			SelectCommand_upvr(clone_upvr)
+			if var14_upvw then
+				any_RemoteEvent_result1_upvr_4:FireServer(var14_upvw, i_7_upvr)
+				PlaceOnCooldown_upvr(clone_upvr, v_7_upvr.cooldown)
+				Reset_upvr()
+			end
+		end)
+		clone_upvr.Visible = true
+		clone_upvr.Parent = ScrollingFrame_upvr
+	end
+	local any_Register_result1 = InterfaceController_upvr:Register("AdminPanel", AdminPanel_upvr, "TopQuint")
+	any_Register_result1:AttachCloseButton(Close_upvr)
+	any_Register_result1:Close()
+	any_setEnabled_result1_upvr.selected:Connect(function()
+		InterfaceController_upvr:SetState("AdminPanel", true)
+	end)
+	any_setEnabled_result1_upvr.deselected:Connect(function()
+		InterfaceController_upvr:SetState("AdminPanel", false)
+	end)
+	any_setEnabled_result1_upvr:setEnabled(true)
+	any_Register_result1.OnOpen:Connect(function()
+		any_setEnabled_result1_upvr:select()
+	end)
+	any_Register_result1.OnClose:Connect(function()
+		any_setEnabled_result1_upvr:deselect()
+	end)
+end
+
+local Template_upvr = ScrollingFrame_upvr_2.Template
+
+local function SetupProfiles_upvr()
+	for _, v_8 in ipairs(Profiles_upvr.ScrollingFrame:GetChildren()) do
+		if v_8:IsA("ImageButton") and v_8.Name ~= "Template" then
+			v_8:Destroy()
+		end
+	end
+	for _, v_9 in ipairs(Players_upvr:GetPlayers()) do
+		local clone_upvr_2 = Template_upvr:Clone()
+		clone_upvr_2.Name = v_9.Name
+		clone_upvr_2.playerName.Text = v_9.Name
+		clone_upvr_2.playerPhoto.Image = `rbxthumb://type=AvatarHeadShot&id={v_9.UserId}&w=100&h=100`
+		local any_new_result1 = AnimatedButton_upvr.new(clone_upvr_2)
+		any_new_result1:Animate()
+		any_new_result1.OnActivated:Connect(function()
+			SelectProfile_upvr(clone_upvr_2)
+			if var15_upvw then
+				any_RemoteEvent_result1_upvr_4:FireServer(var14_upvw, var15_upvw)
+				PlaceOnCooldown_upvr(ScrollingFrame_upvr:FindFirstChild(var15_upvw), AdminCommands_upvr[var15_upvw].cooldown)
+				Reset_upvr()
+			end
+		end)
+		clone_upvr_2.Visible = true
+		clone_upvr_2.Parent = Profiles_upvr.ScrollingFrame
+	end
+end
+
+local any_RemoteEvent_result1_upvr_2 = Net:RemoteEvent("AdminPanelService/OpenUI")
+local any_RemoteEvent_result1_upvr = Net:RemoteEvent("AdminPanelService/PlaceCooldownFromChat")
+local any_RemoteEvent_result1_upvr_3 = Net:RemoteEvent("AdminPanelService/DealWithThis")
+
+function module.Start(arg1)
+	local var109_upvw = false
+	any_RemoteEvent_result1_upvr_2.OnClientEvent:Connect(function()
+		InterfaceController_upvr:SetState("AdminPanel", true)
+	end)
+	any_RemoteEvent_result1_upvr.OnClientEvent:Connect(function(arg1_2)
+		PlaceOnCooldown_upvr(ScrollingFrame_upvr:FindFirstChild(arg1_2), AdminCommands_upvr[arg1_2].cooldown)
+		Reset_upvr()
+	end)
+	any_RemoteEvent_result1_upvr_3.OnClientEvent:Connect(function(arg1_3, arg2, arg3)
+		local var113 = AdminCommands_upvr[arg1_3]
+		if not var113 then
+		else
+			local effects = var113.effects
+			local var115 = effects
+			if var115 then
+				var115 = effects[arg2]
+			end
+			if not var115 then return end
+			task.spawn(var115, arg3)
+		end
+	end)
+	if LocalPlayer_upvr:GetAttribute("AdminCommands") then
+		task.spawn(function()
+			var109_upvw = true
+			SetupProfiles_upvr()
+			SetupCommands_upvr()
+		end)
+	else
+		LocalPlayer_upvr:GetAttributeChangedSignal("AdminCommands"):Connect(function()
+			if not LocalPlayer_upvr:GetAttribute("AdminCommands") then
+			else
+				var109_upvw = true
+				SetupProfiles_upvr()
+				SetupCommands_upvr()
+			end
+		end)
+	end
+	Players_upvr.PlayerAdded:Connect(function()
+		if var109_upvw then
+			SetupProfiles_upvr()
+		end
+	end)
+	Players_upvr.PlayerRemoving:Connect(function()
+		if var109_upvw then
+			SetupProfiles_upvr()
+		end
+	end)
+	local function liveParseCommand_upvr(arg1_4)
+		local string_split_result1 = string.split(arg1_4:lower():gsub("^;", ""), ' ')
+		local var121 = string_split_result1[2] or ""
+		SelectCommand_upvr(ScrollingFrame_upvr:FindFirstChild(string_split_result1[1] or ""))
+		local var122
+		if var121 ~= "" then
+			local getPlayerFromPrefix_upvr_result1 = getPlayerFromPrefix_upvr(var121)
+			local function INLINED()
+				var122 = ScrollingFrame_upvr_2:FindFirstChild(getPlayerFromPrefix_upvr_result1.Name)
+				return var122
+			end
+			if not getPlayerFromPrefix_upvr_result1 or not INLINED() then
+				var122 = nil
+			end
+			SelectProfile_upvr(var122)
+		else
+			SelectProfile_upvr(nil)
+		end
+	end
+	local TextBox_upvr = AdminPanel_upvr.CommandBox:FindFirstChild("TextBox")
+	TextBox_upvr:GetPropertyChangedSignal("Text"):Connect(function()
+		liveParseCommand_upvr(TextBox_upvr.Text)
+	end)
+	TextBox_upvr.FocusLost:Connect(function(arg1_5)
+		if arg1_5 and var15_upvw and var14_upvw then
+			any_RemoteEvent_result1_upvr_4:FireServer(var14_upvw, var15_upvw)
+			PlaceOnCooldown_upvr(ScrollingFrame_upvr:FindFirstChild(var15_upvw), AdminCommands_upvr[var15_upvw].cooldown)
+			TextBox_upvr.Text = ""
+			Reset_upvr()
+		end
+	end)
+end
+
+return module
